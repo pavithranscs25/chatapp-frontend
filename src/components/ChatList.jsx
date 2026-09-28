@@ -1,8 +1,12 @@
 import React from "react";
 
-function ChatList({ chats, selectedChat, setSelectedChat }) {
+function ChatList({
+  chats,
+  selectedChat,
+  setSelectedChat,
+}) {
   return (
-    <div className="flex-1 overflow-y-auto">
+    <div className="min-h-0 flex-1 overflow-y-auto">
 
       {chats.length > 0 ? (
 
@@ -10,9 +14,10 @@ function ChatList({ chats, selectedChat, setSelectedChat }) {
 
           <div
             key={chat.id}
-            onClick={() => setSelectedChat(index)}
-            className={`flex items-center gap-3 p-4 cursor-pointer
-            border-b border-gray-100 transition
+            onClick={() =>
+              setSelectedChat(index)
+            }
+            className={`flex cursor-pointer items-center gap-3 border-b border-gray-100 p-3 transition sm:p-4
             ${
               selectedChat === index
                 ? "bg-blue-50"
@@ -21,40 +26,38 @@ function ChatList({ chats, selectedChat, setSelectedChat }) {
           >
 
             {/* Avatar */}
-            <div className="relative">
 
-              <div className="w-12 h-12 rounded-full bg-blue-600
-              text-white flex items-center justify-center
-              font-semibold">
+            <div className="relative shrink-0">
+
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 font-semibold text-white sm:h-12 sm:w-12">
                 {chat.avatar}
               </div>
 
               {chat.online && (
                 <span
-                  className="absolute bottom-0 right-0
-                  w-3.5 h-3.5 bg-green-500
-                  border-2 border-white rounded-full"
+                  className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white bg-green-500 sm:h-3.5 sm:w-3.5"
                 />
               )}
 
             </div>
 
             {/* Chat Information */}
-            <div className="flex-1 min-w-0">
 
-              <div className="flex justify-between">
+            <div className="min-w-0 flex-1">
 
-                <h3 className="font-semibold text-gray-900 truncate">
+              <div className="flex items-center justify-between gap-2">
+
+                <h3 className="truncate font-semibold text-gray-900">
                   {chat.name}
                 </h3>
 
-                <span className="text-xs text-gray-400">
+                <span className="hidden shrink-0 text-xs text-gray-400 sm:block">
                   {chat.time}
                 </span>
 
               </div>
 
-              <p className="text-sm text-gray-500 truncate mt-1">
+              <p className="mt-1 truncate text-sm text-gray-500">
                 {chat.message}
               </p>
 
@@ -66,7 +69,7 @@ function ChatList({ chats, selectedChat, setSelectedChat }) {
 
       ) : (
 
-        <p className="text-center text-gray-400 mt-10">
+        <p className="mt-10 px-4 text-center text-gray-400">
           No chats found
         </p>
 

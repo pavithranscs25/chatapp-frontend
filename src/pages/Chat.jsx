@@ -4,14 +4,19 @@ import React, { useState, useEffect, useRef } from "react";
 import Sidebar from "../components/Sidebar";
 import ChatWindow from "../components/ChatWindow";
 import { useNavigate } from "react-router-dom";
+
 const API_URL =
-  import.meta.env.VITE_API_URL || "https://chatapp-backend-zemv.onrender.com";
+  import.meta.env.VITE_API_URL ||
+  "https://chatapp-backend-zemv.onrender.com";
 
 function Chat() {
   const [currentUser, setCurrentUser] = useState(null);
   const [chats, setChats] = useState([]);
   const [selectedChat, setSelectedChat] = useState(0);
   const [messages, setMessages] = useState([]);
+
+  // Controls mobile sidebar/chat visibility
+  const [showSidebarMobile, setShowSidebarMobile] = useState(true);
 
   const navigate = useNavigate();
   const stompClient = useRef(null);
@@ -84,19 +89,23 @@ function Chat() {
 
   const currentChat = chats[selectedChat];
 
+  // ---------------- HANDLE CHAT SELECTION ----------------
+
+  const handleSelectChat = (index) => {
+    setSelectedChat(index);
+    setShowSidebarMobile(false);
+  };
+
   // ---------------- WEBSOCKET ----------------
 
   useEffect(() => {
     if (!currentUser) return;
 
-    const socket = new SockJS(
-      `${API_URL}/ws`
-    );
+    const socket = new SockJS(`${API_URL}/ws`);
 
     const client = new Client({
       webSocketFactory: () => socket,
 
-      // Send current user ID during STOMP connection
       connectHeaders: {
         userId: String(currentUser.id),
       },
@@ -153,11 +162,15 @@ function Chat() {
             ]);
           }
         );
+
         // ---------------- PRESENCE SUBSCRIPTION ----------------
 
-        const presenceDestination ="/topic/presence";
+        const presenceDestination = "/topic/presence";
 
-        console.log("Subscribing to:",presenceDestination);
+        console.log(
+          "Subscribing to:",
+          presenceDestination
+        );
 
         client.subscribe(
           presenceDestination,
@@ -179,13 +192,14 @@ function Chat() {
             );
           }
         );
+
         // Tell backend that this user is online
-      client.publish({
+        client.publish({
           destination: "/app/presence",
           body: JSON.stringify({
             userId: currentUser.id,
           }),
-       });
+        });
       },
 
       onStompError: (frame) => {
@@ -208,9 +222,7 @@ function Chat() {
       },
 
       onWebSocketClose: () => {
-        console.log(
-          "WebSocket closed"
-        );
+        console.log("WebSocket closed");
       },
     });
 
@@ -287,10 +299,7 @@ function Chat() {
   // ---------------- SEND MESSAGE ----------------
 
   const handleSend = (text) => {
-    console.log(
-      "Send clicked:",
-      text
-    );
+    console.log("Send clicked:", text);
 
     if (!currentUser) {
       console.error(
@@ -300,9 +309,7 @@ function Chat() {
     }
 
     if (!currentChat) {
-      console.error(
-        "No chat selected"
-      );
+      console.error("No chat selected");
       return;
     }
 
@@ -376,30 +383,50 @@ function Chat() {
   // ---------------- UI ----------------
 
   return (
-    <div className="h-screen bg-gray-50 text-white flex">
+    <div className="flex h-[100dvh] w-full overflow-hidden bg-gray-50 text-gray-900">
 
-      <Sidebar
-        chats={chats}
-        selectedChat={selectedChat}
-        setSelectedChat={setSelectedChat}
-        currentUser={currentUser}
-        handleLogout={handleLogout}
-      />
+      {/* Sidebar */}
 
-      <div className="flex-1">
+      <div
+        className={`
+          h-full w-full shrink-0
+          md:flex md:w-72
+          lg:w-80
+          ${showSidebarMobile ? "flex" : "hidden"}
+        `}
+      >
+        <Sidebar
+          chats={chats}
+          selectedChat={selectedChat}
+          setSelectedChat={handleSelectChat}
+          currentUser={currentUser}
+          handleLogout={handleLogout}
+        />
+      </div>
+
+      {/* Chat Area */}
+
+      <div
+        className={`
+          h-full min-w-0 flex-1
+          ${showSidebarMobile ? "hidden md:flex" : "flex"}
+        `}
+      >
         {currentChat ? (
           <ChatWindow
             chat={currentChat}
             messages={messages}
             onSend={handleSend}
+            onBack={() =>
+              setShowSidebarMobile(true)
+            }
           />
         ) : (
-          <div className="h-full flex items-center justify-center text-gray-500">
+          <div className="flex h-full w-full items-center justify-center px-6 text-center text-gray-500">
             No friends yet.
           </div>
         )}
       </div>
-
     </div>
   );
 }

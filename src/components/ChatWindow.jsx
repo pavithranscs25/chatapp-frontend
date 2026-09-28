@@ -1,43 +1,52 @@
 import React from "react";
-import { Phone, Video, MoreVertical } from "lucide-react";
+import {
+  ArrowLeft,
+  Phone,
+  Video,
+  MoreVertical,
+} from "lucide-react";
 import Message from "./Message";
 import MessageInput from "./MessageInput";
 
-function ChatWindow({ chat, messages, onSend }) {
-
+function ChatWindow({ chat, messages, onSend, onBack }) {
   return (
-    <div className="flex-1 h-full bg-gray-50 flex flex-col">
+    <div className="flex h-full w-full min-w-0 flex-col bg-gray-50">
 
       {/* Chat Header */}
-      <div className="h-20 bg-white border-b border-gray-200
-      flex items-center justify-between px-6">
+      <div className="relative z-10 flex h-16 shrink-0 items-center justify-between border-b border-gray-200 bg-white px-3 sm:h-20 sm:px-4 md:px-6">
 
         {/* User Details */}
-        <div className="flex items-center gap-3">
+        <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+
+          {/* Back Button - Mobile */}
+          <button
+            type="button"
+            onClick={onBack}
+            className="mr-1 rounded-full p-2 text-gray-600 transition hover:bg-gray-100 md:hidden"
+            aria-label="Back to chats"
+          >
+            <ArrowLeft size={20} />
+          </button>
 
           {/* Avatar */}
-          <div className="relative">
+          <div className="relative shrink-0">
 
-            <div className="w-11 h-11 rounded-full bg-blue-600
-            text-white flex items-center justify-center
-            font-semibold">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 font-semibold text-white sm:h-11 sm:w-11">
               {chat.avatar}
             </div>
 
             {chat.online && (
               <span
-                className="absolute bottom-0 right-0
-                w-3.5 h-3.5 bg-green-500
-                border-2 border-white rounded-full"
+                className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white bg-green-500 sm:h-3.5 sm:w-3.5"
               />
             )}
 
           </div>
 
           {/* Name + Status */}
-          <div>
+          <div className="min-w-0">
 
-            <h2 className="font-semibold text-gray-900">
+            <h2 className="truncate text-sm font-semibold text-gray-900 sm:text-base">
               {chat.name}
             </h2>
 
@@ -46,56 +55,57 @@ function ChatWindow({ chat, messages, onSend }) {
             </p>
 
           </div>
-
         </div>
 
         {/* Actions */}
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-0.5 sm:gap-1 md:gap-2">
 
           <button
-            className="p-2.5 rounded-full
-            hover:bg-gray-100 text-gray-600 transition"
+            type="button"
+            className="rounded-full p-2 text-gray-600 transition hover:bg-gray-100 sm:p-2.5"
+            aria-label="Call"
           >
-            <Phone size={19} />
+            <Phone size={18} />
           </button>
 
           <button
-            className="p-2.5 rounded-full
-            hover:bg-gray-100 text-gray-600 transition"
+            type="button"
+            className="rounded-full p-2 text-gray-600 transition hover:bg-gray-100 sm:p-2.5"
+            aria-label="Video call"
           >
-            <Video size={20} />
+            <Video size={19} />
           </button>
 
           <button
-            className="p-2.5 rounded-full
-            hover:bg-gray-100 text-gray-600 transition"
+            type="button"
+            className="rounded-full p-2 text-gray-600 transition hover:bg-gray-100 sm:p-2.5"
+            aria-label="More options"
           >
-            <MoreVertical size={20} />
+            <MoreVertical size={19} />
           </button>
 
         </div>
-
       </div>
-
 
       {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto p-6">
- 
-       {messages.map((message) => (
-            <Message
-                key={message.id}
-                message={message}
-            />
-  ))}
+      <div className="relative z-0 min-h-0 flex-1 overflow-y-auto px-3 py-4 sm:px-4 sm:py-5 md:p-6">
+
+        {messages.map((message) => (
+          <Message
+            key={message.id}
+            message={message}
+          />
+        ))}
 
       </div>
 
-
-      <div className="bg-white border-t border-gray-200 p-4">
-
+      {/* Message Input */}
+      <div
+        className="relative z-50 shrink-0 border-t border-gray-200 bg-white p-2.5 pointer-events-auto sm:p-3 md:p-4"
+      >
         <MessageInput onSend={onSend} />
-
       </div>
+
     </div>
   );
 }
