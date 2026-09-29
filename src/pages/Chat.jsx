@@ -9,6 +9,9 @@ const API_URL =
   import.meta.env.VITE_API_URL ||
   "https://chatapp-backend-zemv.onrender.com";
 
+const SELECTED_CHAT_KEY = "chatapp-selected-chat-id";
+const MOBILE_CHAT_KEY = "chatapp-mobile-chat-open";
+
 function Chat() {
   const [currentUser, setCurrentUser] = useState(null);
   const [chats, setChats] = useState([]);
@@ -16,7 +19,9 @@ function Chat() {
   const [messages, setMessages] = useState([]);
 
   // Controls mobile sidebar/chat visibility
-  const [showSidebarMobile, setShowSidebarMobile] = useState(true);
+  const [showSidebarMobile, setShowSidebarMobile] = useState(() => {
+    return sessionStorage.getItem(MOBILE_CHAT_KEY) !== "true";
+  });
 
   const navigate = useNavigate();
   const stompClient = useRef(null);
@@ -77,7 +82,25 @@ function Chat() {
 
         console.log("Chats:", friends);
 
+        // Restore previously selected chat
+        const savedChatId =
+          sessionStorage.getItem(SELECTED_CHAT_KEY);
+
+        let restoredIndex = 0;
+
+        if (savedChatId) {
+          const foundIndex = friends.findIndex(
+            (friend) =>
+              String(friend.id) === String(savedChatId)
+          );
+
+          if (foundIndex !== -1) {
+            restoredIndex = foundIndex;
+          }
+        }
+
         setChats(friends);
+        setSelectedChat(restoredIndex);
       })
       .catch((error) => {
         console.error("Friends fetch error:", error);
@@ -92,8 +115,25 @@ function Chat() {
   // ---------------- HANDLE CHAT SELECTION ----------------
 
   const handleSelectChat = (index) => {
+    const selected = chats[index];
+
     setSelectedChat(index);
+
+    // Save chat ID
+    if (selected?.id != null) {
+      sessionStorage.setItem(
+        SELECTED_CHAT_KEY,
+        String(selected.id)
+      );
+    }
+
+    // On mobile, open chat window
     setShowSidebarMobile(false);
+
+    sessionStorage.setItem(
+      MOBILE_CHAT_KEY,
+      "true"
+    );
   };
 
   // ---------------- WEBSOCKET ----------------
@@ -147,13 +187,13 @@ function Chat() {
                 currentUser.id
                   ? "me"
                   : "other",
-              time: new Date().toLocaleTimeString(
-                [],
-                {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                }
-              ),
+
+              // AM / PM format
+              time: new Date().toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+                hour12: true,
+              }),
             };
 
             setMessages((previousMessages) => [
@@ -165,7 +205,8 @@ function Chat() {
 
         // ---------------- PRESENCE SUBSCRIPTION ----------------
 
-        const presenceDestination = "/topic/presence";
+        const presenceDestination =
+          "/topic/presence";
 
         console.log(
           "Subscribing to:",
@@ -275,15 +316,15 @@ function Chat() {
               message.senderId === currentUser.id
                 ? "me"
                 : "other",
+
+            // AM / PM format
             time: new Date(
               message.timestamp
-            ).toLocaleTimeString(
-              [],
-              {
-                hour: "2-digit",
-                minute: "2-digit",
-              }
-            ),
+            ).toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+              hour12: true,
+            }),
           }));
 
         setMessages(formattedMessages);
@@ -299,7 +340,10 @@ function Chat() {
   // ---------------- SEND MESSAGE ----------------
 
   const handleSend = (text) => {
-    console.log("Send clicked:", text);
+    console.log(
+      "Send clicked:",
+      text
+    );
 
     if (!currentUser) {
       console.error(
@@ -309,7 +353,9 @@ function Chat() {
     }
 
     if (!currentChat) {
-      console.error("No chat selected");
+      console.error(
+        "No chat selected"
+      );
       return;
     }
 
@@ -342,13 +388,13 @@ function Chat() {
       id: `local-${Date.now()}`,
       text: text,
       sender: "me",
-      time: new Date().toLocaleTimeString(
-        [],
-        {
-          hour: "2-digit",
-          minute: "2-digit",
-        }
-      ),
+
+      // AM / PM format
+      time: new Date().toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
+      }),
     };
 
     setMessages((previousMessages) => [
@@ -370,6 +416,15 @@ function Chat() {
       );
 
       if (response.ok) {
+        // Clear saved chat state after logout
+        sessionStorage.removeItem(
+          SELECTED_CHAT_KEY
+        );
+
+        sessionStorage.removeItem(
+          MOBILE_CHAT_KEY
+        );
+
         navigate("/");
       }
     } catch (error) {
@@ -378,6 +433,17 @@ function Chat() {
         error
       );
     }
+  };
+
+  // ---------------- MOBILE BACK ----------------
+
+  const handleBackToSidebar = () => {
+    setShowSidebarMobile(true);
+
+    sessionStorage.setItem(
+      MOBILE_CHAT_KEY,
+      "false"
+    );
   };
 
   // ---------------- UI ----------------
@@ -417,9 +483,7 @@ function Chat() {
             chat={currentChat}
             messages={messages}
             onSend={handleSend}
-            onBack={() =>
-              setShowSidebarMobile(true)
-            }
+            onBack={handleBackToSidebar}
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center px-6 text-center text-gray-500">
@@ -427,6 +491,7 @@ function Chat() {
           </div>
         )}
       </div>
+
     </div>
   );
 }

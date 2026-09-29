@@ -1,5 +1,8 @@
 import React, { useState } from "react";
-import { Search, MoreVertical } from "lucide-react";
+import {
+  Search,
+  MoreVertical,
+} from "lucide-react";
 import ChatList from "./ChatList";
 import { useNavigate } from "react-router-dom";
 
@@ -39,42 +42,56 @@ function Sidebar({
           <div className="relative">
 
             <button
+              type="button"
               onClick={() =>
-                setShowMenu(!showMenu)
+                setShowMenu(
+                  (previous) => !previous
+                )
               }
               className="rounded-full p-2 text-gray-600 transition hover:bg-gray-100"
+              aria-label="Open menu"
             >
               <MoreVertical size={20} />
             </button>
 
             {showMenu && (
-              <div className="absolute right-0 top-10 z-50 w-44 rounded-lg border border-gray-200 bg-white py-1 shadow-lg">
+              <div className="absolute right-0 top-10 z-50 w-44 overflow-hidden rounded-lg border border-gray-200 bg-white py-1 shadow-lg">
+
+                {/* Requests */}
 
                 <button
+                  type="button"
                   onClick={() => {
                     setShowMenu(false);
                     navigate("/requests");
                   }}
-                  className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-100"
+                  className="w-full px-4 py-2.5 text-left text-sm text-gray-700 transition hover:bg-gray-100"
                 >
                   Requests
                 </button>
 
+                {/* Settings */}
+
                 <button
+                  type="button"
                   onClick={() => {
                     setShowMenu(false);
+                    navigate("/settings");
                   }}
-                  className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-100"
+                  className="w-full px-4 py-2.5 text-left text-sm text-gray-700 transition hover:bg-gray-100"
                 >
                   Settings
                 </button>
 
+                {/* Logout */}
+
                 <button
+                  type="button"
                   onClick={() => {
                     setShowMenu(false);
                     handleLogout();
                   }}
-                  className="w-full px-4 py-2.5 text-left text-sm text-red-600 hover:bg-red-50"
+                  className="w-full px-4 py-2.5 text-left text-sm text-red-600 transition hover:bg-red-50"
                 >
                   Logout
                 </button>
