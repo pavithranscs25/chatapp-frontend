@@ -1,4 +1,7 @@
-import React, { useState } from "react";
+import React, {
+  useEffect,
+  useState,
+} from "react";
 import {
   Search,
   MoreVertical,
@@ -16,13 +19,108 @@ function Sidebar({
   const [search, setSearch] = useState("");
   const [showMenu, setShowMenu] = useState(false);
 
+  const [customNames, setCustomNames] =
+    useState({});
+
   const navigate = useNavigate();
 
-  const filteredChats = chats.filter((chat) =>
-    chat.name
-      .toLowerCase()
-      .includes(search.toLowerCase())
-  );
+  // ---------------- CUSTOM NAME STORAGE KEY ----------------
+
+  const customNamesKey = currentUser?.id
+    ? `chatapp-custom-names-${currentUser.id}`
+    : null;
+
+  // ---------------- LOAD CUSTOM NAMES ----------------
+
+  useEffect(() => {
+    if (!customNamesKey) {
+      return;
+    }
+
+    try {
+      const savedNames =
+        localStorage.getItem(
+          customNamesKey
+        );
+
+      if (savedNames) {
+        const parsedNames =
+          JSON.parse(savedNames);
+
+        if (
+          parsedNames &&
+          typeof parsedNames === "object"
+        ) {
+          setCustomNames(
+            parsedNames
+          );
+        }
+      }
+    } catch (error) {
+      console.error(
+        "Failed to load custom names:",
+        error
+      );
+    }
+  }, [customNamesKey]);
+
+  // ---------------- SAVE CUSTOM NAME ----------------
+
+  const handleSaveCustomName = (
+    chatId,
+    customName
+  ) => {
+    setCustomNames((previousNames) => {
+      const updatedNames = {
+        ...previousNames,
+        [chatId]: customName,
+      };
+
+      if (customNamesKey) {
+        try {
+          localStorage.setItem(
+            customNamesKey,
+            JSON.stringify(
+              updatedNames
+            )
+          );
+        } catch (error) {
+          console.error(
+            "Failed to save custom name:",
+            error
+          );
+        }
+      }
+
+      return updatedNames;
+    });
+  };
+
+  // ---------------- SEARCH ----------------
+
+  const filteredChats =
+    chats.filter((chat) => {
+      const originalName =
+        chat.name?.toLowerCase() || "";
+
+      const customName =
+        customNames[chat.id]
+          ?.toLowerCase() || "";
+
+      const searchText =
+        search.toLowerCase();
+
+      return (
+        originalName.includes(
+          searchText
+        ) ||
+        customName.includes(
+          searchText
+        )
+      );
+    });
+
+  // ---------------- UI ----------------
 
   return (
     <div className="flex h-full w-full min-w-0 flex-col border-r border-gray-200 bg-white">
@@ -34,7 +132,9 @@ function Sidebar({
         <div className="mb-4 flex items-center justify-between sm:mb-5">
 
           <h1 className="text-xl font-bold text-gray-900 sm:text-2xl">
-            Chat<span className="text-blue-600">App</span>
+            Chat<span className="text-blue-600">
+              App
+            </span>
           </h1>
 
           {/* Three Dot Menu */}
@@ -45,7 +145,8 @@ function Sidebar({
               type="button"
               onClick={() =>
                 setShowMenu(
-                  (previous) => !previous
+                  (previous) =>
+                    !previous
                 )
               }
               className="rounded-full p-2 text-gray-600 transition hover:bg-gray-100"
@@ -63,7 +164,9 @@ function Sidebar({
                   type="button"
                   onClick={() => {
                     setShowMenu(false);
-                    navigate("/requests");
+                    navigate(
+                      "/requests"
+                    );
                   }}
                   className="w-full px-4 py-2.5 text-left text-sm text-gray-700 transition hover:bg-gray-100"
                 >
@@ -76,7 +179,9 @@ function Sidebar({
                   type="button"
                   onClick={() => {
                     setShowMenu(false);
-                    navigate("/settings");
+                    navigate(
+                      "/settings"
+                    );
                   }}
                   className="w-full px-4 py-2.5 text-left text-sm text-gray-700 transition hover:bg-gray-100"
                 >
@@ -153,7 +258,13 @@ function Sidebar({
       <ChatList
         chats={filteredChats}
         selectedChat={selectedChat}
-        setSelectedChat={setSelectedChat}
+        setSelectedChat={
+          setSelectedChat
+        }
+        customNames={customNames}
+        onSaveCustomName={
+          handleSaveCustomName
+        }
       />
 
     </div>

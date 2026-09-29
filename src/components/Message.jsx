@@ -1,7 +1,6 @@
 import React from "react";
 
 function Message({ message }) {
-
   const isMine = message.sender === "me";
 
   return (
@@ -12,15 +11,33 @@ function Message({ message }) {
           : "justify-start"
       }`}
     >
-
       <div
-        className={`min-w-0 max-w-[85%] px-3 py-2.5 sm:max-w-[70%] sm:px-4 sm:py-3 ${
+        className={`min-w-0 max-w-[85%]
+        px-3 py-2.5
+        backdrop-blur-md
+        shadow-md
+        sm:max-w-[70%]
+        sm:px-4 sm:py-3
+        ${
           isMine
-            ? "rounded-2xl rounded-br-md bg-blue-600 text-white"
-            : "rounded-2xl rounded-bl-md border border-gray-200 bg-white text-gray-900"
+            ? `
+              rounded-2xl
+              rounded-br-md
+              border border-white/15
+              bg-black/70
+              text-white
+              shadow-black/20
+            `
+            : `
+              rounded-2xl
+              rounded-bl-md
+              border border-indigo-200/70
+              bg-indigo-50/80
+              text-gray-900
+              shadow-indigo-100/40
+            `
         }`}
       >
-
         {/* Message Text */}
 
         <p className="break-words text-sm leading-5">
@@ -32,15 +49,13 @@ function Message({ message }) {
         <p
           className={`mt-1 text-[10px] ${
             isMine
-              ? "text-right text-blue-100"
+              ? "text-right text-white/60"
               : "text-gray-400"
           }`}
         >
           {message.time}
         </p>
-
       </div>
-
     </div>
   );
 }
