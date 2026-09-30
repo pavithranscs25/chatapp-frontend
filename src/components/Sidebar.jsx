@@ -15,6 +15,7 @@ function Sidebar({
   setSelectedChat,
   currentUser,
   handleLogout,
+  unreadCounts
 }) {
   const [search, setSearch] = useState("");
   const [showMenu, setShowMenu] = useState(false);
@@ -265,6 +266,7 @@ function Sidebar({
         onSaveCustomName={
           handleSaveCustomName
         }
+        unreadCounts={unreadCounts}
       />
 
     </div>

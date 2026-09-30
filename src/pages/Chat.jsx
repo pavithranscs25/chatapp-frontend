@@ -1,6 +1,10 @@
 import SockJS from "sockjs-client";
 import { Client } from "@stomp/stompjs";
-import React, { useState, useEffect, useRef } from "react";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+} from "react";
 import Sidebar from "../components/Sidebar";
 import ChatWindow from "../components/ChatWindow";
 import { useNavigate } from "react-router-dom";
@@ -9,22 +13,59 @@ const API_URL =
   import.meta.env.VITE_API_URL ||
   "https://chatapp-backend-zemv.onrender.com";
 
-const SELECTED_CHAT_KEY = "chatapp-selected-chat-id";
-const MOBILE_CHAT_KEY = "chatapp-mobile-chat-open";
+const SELECTED_CHAT_KEY =
+  "chatapp-selected-chat-id";
+
+const MOBILE_CHAT_KEY =
+  "chatapp-mobile-chat-open";
 
 function Chat() {
-  const [currentUser, setCurrentUser] = useState(null);
-  const [chats, setChats] = useState([]);
-  const [selectedChat, setSelectedChat] = useState(0);
-  const [messages, setMessages] = useState([]);
+  const [currentUser, setCurrentUser] =
+    useState(null);
+
+  const [chats, setChats] =
+    useState([]);
+
+  const [selectedChat, setSelectedChat] =
+    useState(0);
+
+  const [messages, setMessages] =
+    useState([]);
+
+  const [unreadCounts, setUnreadCounts] =
+    useState({});
 
   // Controls mobile sidebar/chat visibility
-  const [showSidebarMobile, setShowSidebarMobile] = useState(() => {
-    return sessionStorage.getItem(MOBILE_CHAT_KEY) !== "true";
-  });
+  const [showSidebarMobile, setShowSidebarMobile] =
+    useState(() => {
+      return (
+        sessionStorage.getItem(
+          MOBILE_CHAT_KEY
+        ) !== "true"
+      );
+    });
 
   const navigate = useNavigate();
-  const stompClient = useRef(null);
+
+  const stompClient =
+    useRef(null);
+
+  // Keeps track of currently opened chat
+  const currentChatIdRef =
+    useRef(null);
+
+  // ---------------- FORMAT TIME ----------------
+
+  const formatMessageTime = (date) => {
+    return new Date(date).toLocaleTimeString(
+      [],
+      {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
+      }
+    );
+  };
 
   // ---------------- CURRENT USER ----------------
 
@@ -34,17 +75,27 @@ function Chat() {
     })
       .then((response) => {
         if (!response.ok) {
-          throw new Error("User not authenticated");
+          throw new Error(
+            "User not authenticated"
+          );
         }
 
         return response.json();
       })
       .then((data) => {
         setCurrentUser(data);
-        console.log("Current user:", data);
+
+        console.log(
+          "Current user:",
+          data
+        );
       })
       .catch((error) => {
-        console.error("User fetch error:", error);
+        console.error(
+          "User fetch error:",
+          error
+        );
+
         navigate("/");
       });
   }, [navigate]);
@@ -62,60 +113,92 @@ function Chat() {
     )
       .then((response) => {
         if (!response.ok) {
-          throw new Error("Failed to fetch friends");
+          throw new Error(
+            "Failed to fetch friends"
+          );
         }
 
         return response.json();
       })
       .then((data) => {
-        console.log("Accepted friends:", data);
+        console.log(
+          "Accepted friends:",
+          data
+        );
 
-        const friends = data.map((user) => ({
-          id: user.id,
-          name: user.username,
-          message: "",
-          time: "",
-          online: false,
-          avatar:
-            user.username?.charAt(0).toUpperCase() || "?",
-        }));
+        const friends = data.map(
+          (user) => ({
+            id: user.id,
+            name: user.username,
+            message: "",
+            time: "",
+            online: false,
+            avatar:
+              user.username
+                ?.charAt(0)
+                .toUpperCase() ||
+              "?",
+          })
+        );
 
-        console.log("Chats:", friends);
+        console.log(
+          "Chats:",
+          friends
+        );
 
         // Restore previously selected chat
         const savedChatId =
-          sessionStorage.getItem(SELECTED_CHAT_KEY);
+          sessionStorage.getItem(
+            SELECTED_CHAT_KEY
+          );
 
         let restoredIndex = 0;
 
         if (savedChatId) {
-          const foundIndex = friends.findIndex(
-            (friend) =>
-              String(friend.id) === String(savedChatId)
-          );
+          const foundIndex =
+            friends.findIndex(
+              (friend) =>
+                String(friend.id) ===
+                String(savedChatId)
+            );
 
           if (foundIndex !== -1) {
-            restoredIndex = foundIndex;
+            restoredIndex =
+              foundIndex;
           }
         }
 
         setChats(friends);
-        setSelectedChat(restoredIndex);
+        setSelectedChat(
+          restoredIndex
+        );
       })
       .catch((error) => {
-        console.error("Friends fetch error:", error);
+        console.error(
+          "Friends fetch error:",
+          error
+        );
+
         setChats([]);
       });
   }, [currentUser]);
 
   // ---------------- CURRENT CHAT ----------------
 
-  const currentChat = chats[selectedChat];
+  const currentChat =
+    chats[selectedChat];
+
+  // Keep current chat ID in a ref
+  useEffect(() => {
+    currentChatIdRef.current =
+      currentChat?.id ?? null;
+  }, [currentChat]);
 
   // ---------------- HANDLE CHAT SELECTION ----------------
 
   const handleSelectChat = (index) => {
-    const selected = chats[index];
+    const selected =
+      chats[index];
 
     setSelectedChat(index);
 
@@ -125,10 +208,20 @@ function Chat() {
         SELECTED_CHAT_KEY,
         String(selected.id)
       );
+
+      // Clear unread count
+      setUnreadCounts(
+        (previousCounts) => ({
+          ...previousCounts,
+          [selected.id]: 0,
+        })
+      );
     }
 
     // On mobile, open chat window
-    setShowSidebarMobile(false);
+    setShowSidebarMobile(
+      false
+    );
 
     sessionStorage.setItem(
       MOBILE_CHAT_KEY,
@@ -141,13 +234,17 @@ function Chat() {
   useEffect(() => {
     if (!currentUser) return;
 
-    const socket = new SockJS(`${API_URL}/ws`);
+    const socket = new SockJS(
+      `${API_URL}/ws`
+    );
 
     const client = new Client({
       webSocketFactory: () => socket,
 
       connectHeaders: {
-        userId: String(currentUser.id),
+        userId: String(
+          currentUser.id
+        ),
       },
 
       reconnectDelay: 5000,
@@ -156,7 +253,9 @@ function Chat() {
       heartbeatOutgoing: 10000,
 
       onConnect: () => {
-        console.log("WebSocket connected");
+        console.log(
+          "WebSocket connected"
+        );
 
         // ---------------- MESSAGE SUBSCRIPTION ----------------
 
@@ -177,29 +276,110 @@ function Chat() {
             );
 
             const receivedMessage =
-              JSON.parse(message.body);
+              JSON.parse(
+                message.body
+              );
+
+            const senderId =
+              receivedMessage.senderId;
+
+            const isOwnMessage =
+              senderId ===
+              currentUser.id;
+
+            const messageTime =
+              formatMessageTime(
+                new Date()
+              );
+
+            // ---------------- UPDATE CHAT PREVIEW ----------------
+
+            setChats(
+              (previousChats) =>
+                previousChats.map(
+                  (chat) => {
+                    if (
+                      String(chat.id) ===
+                      String(
+                        senderId
+                      )
+                    ) {
+                      return {
+                        ...chat,
+                        message:
+                          receivedMessage.content,
+                        time:
+                          messageTime,
+                      };
+                    }
+
+                    // For own sent message,
+                    // update the currently selected friend's preview.
+                    if (
+                      isOwnMessage &&
+                      currentChatIdRef.current &&
+                      String(chat.id) ===
+                        String(
+                          currentChatIdRef.current
+                        )
+                    ) {
+                      return {
+                        ...chat,
+                        message:
+                          receivedMessage.content,
+                        time:
+                          messageTime,
+                      };
+                    }
+
+                    return chat;
+                  }
+                )
+            );
+
+            // ---------------- UNREAD COUNT ----------------
+
+            if (
+              !isOwnMessage &&
+              String(senderId) !==
+                String(
+                  currentChatIdRef.current
+                )
+            ) {
+              setUnreadCounts(
+                (previousCounts) => ({
+                  ...previousCounts,
+                  [senderId]:
+                    (previousCounts[
+                      senderId
+                    ] || 0) + 1,
+                })
+              );
+            }
+
+            // ---------------- ADD MESSAGE ----------------
 
             const newMessage = {
               id: `ws-${Date.now()}`,
-              text: receivedMessage.content,
+
+              text:
+                receivedMessage.content,
+
               sender:
-                receivedMessage.senderId ===
-                currentUser.id
+                isOwnMessage
                   ? "me"
                   : "other",
 
-              // AM / PM format
-              time: new Date().toLocaleTimeString([], {
-                hour: "2-digit",
-                minute: "2-digit",
-                hour12: true,
-              }),
+              time:
+                messageTime,
             };
 
-            setMessages((previousMessages) => [
-              ...previousMessages,
-              newMessage,
-            ]);
+            setMessages(
+              (previousMessages) => [
+                ...previousMessages,
+                newMessage,
+              ]
+            );
           }
         );
 
@@ -222,23 +402,33 @@ function Chat() {
             );
 
             const onlineUserIds =
-              JSON.parse(message.body);
+              JSON.parse(
+                message.body
+              );
 
-            setChats((previousChats) =>
-              previousChats.map((chat) => ({
-                ...chat,
-                online:
-                  onlineUserIds.includes(chat.id),
-              }))
+            setChats(
+              (previousChats) =>
+                previousChats.map(
+                  (chat) => ({
+                    ...chat,
+                    online:
+                      onlineUserIds.includes(
+                        chat.id
+                      ),
+                  })
+                )
             );
           }
         );
 
         // Tell backend that this user is online
         client.publish({
-          destination: "/app/presence",
+          destination:
+            "/app/presence",
+
           body: JSON.stringify({
-            userId: currentUser.id,
+            userId:
+              currentUser.id,
           }),
         });
       },
@@ -263,11 +453,14 @@ function Chat() {
       },
 
       onWebSocketClose: () => {
-        console.log("WebSocket closed");
+        console.log(
+          "WebSocket closed"
+        );
       },
     });
 
-    stompClient.current = client;
+    stompClient.current =
+      client;
 
     client.activate();
 
@@ -285,7 +478,12 @@ function Chat() {
   // ---------------- FETCH CHAT HISTORY ----------------
 
   useEffect(() => {
-    if (!currentUser || !currentChat) return;
+    if (
+      !currentUser ||
+      !currentChat
+    ) {
+      return;
+    }
 
     fetch(
       `${API_URL}/api/messages/${currentUser.id}/${currentChat.id}`,
@@ -309,25 +507,89 @@ function Chat() {
         );
 
         const formattedMessages =
-          data.map((message) => ({
-            id: message.id,
-            text: message.content,
-            sender:
-              message.senderId === currentUser.id
-                ? "me"
-                : "other",
+          data.map(
+            (message) => ({
+              id: message.id,
 
-            // AM / PM format
-            time: new Date(
-              message.timestamp
-            ).toLocaleTimeString([], {
-              hour: "2-digit",
-              minute: "2-digit",
-              hour12: true,
-            }),
-          }));
+              text:
+                message.content,
 
-        setMessages(formattedMessages);
+              sender:
+                message.senderId ===
+                currentUser.id
+                  ? "me"
+                  : "other",
+
+              time:
+                formatMessageTime(
+                  new Date(
+                    message.timestamp
+                  )
+                ),
+            })
+          );
+
+        setMessages(
+          formattedMessages
+        );
+
+        // ---------------- UPDATE LATEST CHAT PREVIEW ----------------
+
+        if (data.length > 0) {
+          const latestMessage =
+            data[data.length - 1];
+
+          setChats(
+            (previousChats) =>
+              previousChats.map(
+                (chat) => {
+                  if (
+                    String(chat.id) ===
+                    String(
+                      currentChat.id
+                    )
+                  ) {
+                    return {
+                      ...chat,
+                      message:
+                        latestMessage.content,
+                      time:
+                        formatMessageTime(
+                          new Date(
+                            latestMessage.timestamp
+                          )
+                        ),
+                    };
+                  }
+
+                  return chat;
+                }
+              )
+          );
+        } else {
+          // No messages yet
+          setChats(
+            (previousChats) =>
+              previousChats.map(
+                (chat) => {
+                  if (
+                    String(chat.id) ===
+                    String(
+                      currentChat.id
+                    )
+                  ) {
+                    return {
+                      ...chat,
+                      message: "",
+                      time: "",
+                    };
+                  }
+
+                  return chat;
+                }
+              )
+          );
+        }
       })
       .catch((error) => {
         console.error(
@@ -335,7 +597,10 @@ function Chat() {
           error
         );
       });
-  }, [currentUser, currentChat]);
+  }, [
+    currentUser,
+    currentChat,
+  ]);
 
   // ---------------- SEND MESSAGE ----------------
 
@@ -349,6 +614,7 @@ function Chat() {
       console.error(
         "Current user not available"
       );
+
       return;
     }
 
@@ -356,20 +622,31 @@ function Chat() {
       console.error(
         "No chat selected"
       );
+
       return;
     }
 
-    if (!stompClient.current?.connected) {
+    if (
+      !stompClient.current
+        ?.connected
+    ) {
       console.error(
         "WebSocket is not connected"
       );
+
       return;
     }
 
     const message = {
-      senderId: currentUser.id,
-      receiverId: currentChat.id,
-      sender: currentUser.name,
+      senderId:
+        currentUser.id,
+
+      receiverId:
+        currentChat.id,
+
+      sender:
+        currentUser.name,
+
       content: text,
     };
 
@@ -379,44 +656,76 @@ function Chat() {
     );
 
     stompClient.current.publish({
-      destination: "/app/send",
-      body: JSON.stringify(message),
+      destination:
+        "/app/send",
+
+      body: JSON.stringify(
+        message
+      ),
     });
+
+    const messageTime =
+      formatMessageTime(
+        new Date()
+      );
+
+    // ---------------- UPDATE CHAT PREVIEW ----------------
+
+    setChats(
+      (previousChats) =>
+        previousChats.map(
+          (chat) => {
+            if (
+              String(chat.id) ===
+              String(
+                currentChat.id
+              )
+            ) {
+              return {
+                ...chat,
+                message: text,
+                time: messageTime,
+              };
+            }
+
+            return chat;
+          }
+        )
+    );
 
     // Show sent message immediately
     const sentMessage = {
       id: `local-${Date.now()}`,
+
       text: text,
+
       sender: "me",
 
-      // AM / PM format
-      time: new Date().toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: true,
-      }),
+      time: messageTime,
     };
 
-    setMessages((previousMessages) => [
-      ...previousMessages,
-      sentMessage,
-    ]);
+    setMessages(
+      (previousMessages) => [
+        ...previousMessages,
+        sentMessage,
+      ]
+    );
   };
 
   // ---------------- LOGOUT ----------------
 
   const handleLogout = async () => {
     try {
-      const response = await fetch(
-        `${API_URL}/auth/logout`,
-        {
-          method: "POST",
-          credentials: "include",
-        }
-      );
+      const response =
+        await fetch(
+          `${API_URL}/auth/logout`,
+          {
+            method: "POST",
+            credentials: "include",
+          }
+        );
 
       if (response.ok) {
-        // Clear saved chat state after logout
         sessionStorage.removeItem(
           SELECTED_CHAT_KEY
         );
@@ -424,6 +733,8 @@ function Chat() {
         sessionStorage.removeItem(
           MOBILE_CHAT_KEY
         );
+
+        setUnreadCounts({});
 
         navigate("/");
       }
@@ -438,7 +749,9 @@ function Chat() {
   // ---------------- MOBILE BACK ----------------
 
   const handleBackToSidebar = () => {
-    setShowSidebarMobile(true);
+    setShowSidebarMobile(
+      true
+    );
 
     sessionStorage.setItem(
       MOBILE_CHAT_KEY,
@@ -458,15 +771,28 @@ function Chat() {
           h-full w-full shrink-0
           md:flex md:w-72
           lg:w-80
-          ${showSidebarMobile ? "flex" : "hidden"}
+          ${
+            showSidebarMobile
+              ? "flex"
+              : "hidden"
+          }
         `}
       >
         <Sidebar
           chats={chats}
           selectedChat={selectedChat}
-          setSelectedChat={handleSelectChat}
-          currentUser={currentUser}
-          handleLogout={handleLogout}
+          setSelectedChat={
+            handleSelectChat
+          }
+          currentUser={
+            currentUser
+          }
+          handleLogout={
+            handleLogout
+          }
+          unreadCounts={
+            unreadCounts
+          }
         />
       </div>
 
@@ -475,7 +801,11 @@ function Chat() {
       <div
         className={`
           h-full min-w-0 flex-1
-          ${showSidebarMobile ? "hidden md:flex" : "flex"}
+          ${
+            showSidebarMobile
+              ? "hidden md:flex"
+              : "flex"
+          }
         `}
       >
         {currentChat ? (
@@ -483,7 +813,9 @@ function Chat() {
             chat={currentChat}
             messages={messages}
             onSend={handleSend}
-            onBack={handleBackToSidebar}
+            onBack={
+              handleBackToSidebar
+            }
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center px-6 text-center text-gray-500">
