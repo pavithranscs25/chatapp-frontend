@@ -13,6 +13,7 @@ import MessageInput from "./MessageInput";
 
 function ChatWindow({
   chat,
+  chatDisplayName,
   messages,
   onSend,
   onBack,
@@ -32,7 +33,8 @@ function ChatWindow({
     if (!chat?.id) return;
 
     if (
-      restoredChatRef.current !== chat.id
+      restoredChatRef.current !==
+      chat.id
     ) {
       restoredChatRef.current = null;
     }
@@ -42,7 +44,8 @@ function ChatWindow({
     }
 
     if (
-      restoredChatRef.current === chat.id
+      restoredChatRef.current ===
+      chat.id
     ) {
       return;
     }
@@ -68,7 +71,8 @@ function ChatWindow({
       });
     }
 
-    restoredChatRef.current = chat.id;
+    restoredChatRef.current =
+      chat.id;
   }, [
     chat?.id,
     messages.length,
@@ -81,13 +85,18 @@ function ChatWindow({
     const container =
       messagesContainerRef.current;
 
-    if (!container || !chat?.id) {
+    if (
+      !container ||
+      !chat?.id
+    ) {
       return;
     }
 
     sessionStorage.setItem(
       scrollStorageKey,
-      String(container.scrollTop)
+      String(
+        container.scrollTop
+      )
     );
   };
 
@@ -98,13 +107,18 @@ function ChatWindow({
       const container =
         messagesContainerRef.current;
 
-      if (!container || !chat?.id) {
+      if (
+        !container ||
+        !chat?.id
+      ) {
         return;
       }
 
       sessionStorage.setItem(
         scrollStorageKey,
-        String(container.scrollTop)
+        String(
+          container.scrollTop
+        )
       );
     };
   }, [
@@ -155,7 +169,8 @@ function ChatWindow({
           <div className="min-w-0">
 
             <h2 className="truncate text-sm font-semibold text-gray-900 sm:text-base">
-              {chat.name}
+              {chatDisplayName ||
+                chat.name}
             </h2>
 
             <p className="text-xs text-green-500">
@@ -203,16 +218,20 @@ function ChatWindow({
 
       <div
         ref={messagesContainerRef}
-        onScroll={handleMessagesScroll}
+        onScroll={
+          handleMessagesScroll
+        }
         className="relative z-0 min-h-0 flex-1 overflow-y-auto px-3 py-4 sm:px-4 sm:py-5 md:p-6"
       >
 
-        {messages.map((message) => (
-          <Message
-            key={message.id}
-            message={message}
-          />
-        ))}
+        {messages.map(
+          (message) => (
+            <Message
+              key={message.id}
+              message={message}
+            />
+          )
+        )}
 
       </div>
 
@@ -221,7 +240,9 @@ function ChatWindow({
       <div
         className="relative z-50 shrink-0 border-t border-gray-200 bg-white p-2.5 pointer-events-auto sm:p-3 md:p-4"
       >
-        <MessageInput onSend={onSend} />
+        <MessageInput
+          onSend={onSend}
+        />
       </div>
 
     </div>

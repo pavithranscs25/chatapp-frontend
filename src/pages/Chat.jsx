@@ -35,6 +35,10 @@ function Chat() {
   const [unreadCounts, setUnreadCounts] =
     useState({});
 
+  // Custom names for friends
+  const [customNames, setCustomNames] =
+    useState({});
+
   // Controls mobile sidebar/chat visibility
   const [showSidebarMobile, setShowSidebarMobile] =
     useState(() => {
@@ -99,6 +103,80 @@ function Chat() {
         navigate("/");
       });
   }, [navigate]);
+
+  // ---------------- LOAD CUSTOM NAMES ----------------
+
+  useEffect(() => {
+    if (!currentUser?.id) {
+      return;
+    }
+
+    const customNamesKey =
+      `chatapp-custom-names-${currentUser.id}`;
+
+    try {
+      const savedNames =
+        localStorage.getItem(
+          customNamesKey
+        );
+
+      if (savedNames) {
+        const parsedNames =
+          JSON.parse(savedNames);
+
+        if (
+          parsedNames &&
+          typeof parsedNames === "object"
+        ) {
+          setCustomNames(
+            parsedNames
+          );
+        }
+      }
+    } catch (error) {
+      console.error(
+        "Failed to load custom names:",
+        error
+      );
+    }
+  }, [currentUser]);
+
+  // ---------------- SAVE CUSTOM NAME ----------------
+
+  const handleSaveCustomName = (
+    chatId,
+    customName
+  ) => {
+    setCustomNames(
+      (previousNames) => {
+        const updatedNames = {
+          ...previousNames,
+          [chatId]: customName,
+        };
+
+        if (currentUser?.id) {
+          const customNamesKey =
+            `chatapp-custom-names-${currentUser.id}`;
+
+          try {
+            localStorage.setItem(
+              customNamesKey,
+              JSON.stringify(
+                updatedNames
+              )
+            );
+          } catch (error) {
+            console.error(
+              "Failed to save custom name:",
+              error
+            );
+          }
+        }
+
+        return updatedNames;
+      }
+    );
+  };
 
   // ---------------- FETCH ACCEPTED FRIENDS ----------------
 
@@ -187,6 +265,14 @@ function Chat() {
 
   const currentChat =
     chats[selectedChat];
+
+  // ---------------- CURRENT CHAT DISPLAY NAME ----------------
+
+  const currentChatDisplayName =
+    currentChat
+      ? customNames[currentChat.id] ||
+        currentChat.name
+      : "";
 
   // Keep current chat ID in a ref
   useEffect(() => {
@@ -292,8 +378,7 @@ function Chat() {
                 new Date()
               );
 
-            // ---------------- UPDATE CHAT PREVIEW ----------------
-
+            // Update chat preview
             setChats(
               (previousChats) =>
                 previousChats.map(
@@ -313,8 +398,6 @@ function Chat() {
                       };
                     }
 
-                    // For own sent message,
-                    // update the currently selected friend's preview.
                     if (
                       isOwnMessage &&
                       currentChatIdRef.current &&
@@ -337,8 +420,7 @@ function Chat() {
                 )
             );
 
-            // ---------------- UNREAD COUNT ----------------
-
+            // Unread count
             if (
               !isOwnMessage &&
               String(senderId) !==
@@ -357,8 +439,7 @@ function Chat() {
               );
             }
 
-            // ---------------- ADD MESSAGE ----------------
-
+            // Add message
             const newMessage = {
               id: `ws-${Date.now()}`,
 
@@ -533,8 +614,7 @@ function Chat() {
           formattedMessages
         );
 
-        // ---------------- UPDATE LATEST CHAT PREVIEW ----------------
-
+        // Update latest chat preview
         if (data.length > 0) {
           const latestMessage =
             data[data.length - 1];
@@ -559,29 +639,6 @@ function Chat() {
                             latestMessage.timestamp
                           )
                         ),
-                    };
-                  }
-
-                  return chat;
-                }
-              )
-          );
-        } else {
-          // No messages yet
-          setChats(
-            (previousChats) =>
-              previousChats.map(
-                (chat) => {
-                  if (
-                    String(chat.id) ===
-                    String(
-                      currentChat.id
-                    )
-                  ) {
-                    return {
-                      ...chat,
-                      message: "",
-                      time: "",
                     };
                   }
 
@@ -669,8 +726,7 @@ function Chat() {
         new Date()
       );
 
-    // ---------------- UPDATE CHAT PREVIEW ----------------
-
+    // Update chat preview
     setChats(
       (previousChats) =>
         previousChats.map(
@@ -735,6 +791,7 @@ function Chat() {
         );
 
         setUnreadCounts({});
+        setCustomNames({});
 
         navigate("/");
       }
@@ -793,6 +850,12 @@ function Chat() {
           unreadCounts={
             unreadCounts
           }
+          customNames={
+            customNames
+          }
+          onSaveCustomName={
+            handleSaveCustomName
+          }
         />
       </div>
 
@@ -811,6 +874,9 @@ function Chat() {
         {currentChat ? (
           <ChatWindow
             chat={currentChat}
+            chatDisplayName={
+              currentChatDisplayName
+            }
             messages={messages}
             onSend={handleSend}
             onBack={

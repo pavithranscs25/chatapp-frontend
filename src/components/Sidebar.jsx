@@ -1,7 +1,4 @@
-import React, {
-  useEffect,
-  useState,
-} from "react";
+import React, { useState } from "react";
 import {
   Search,
   MoreVertical,
@@ -15,98 +12,28 @@ function Sidebar({
   setSelectedChat,
   currentUser,
   handleLogout,
-  unreadCounts
+  unreadCounts,
+  customNames,
+  onSaveCustomName,
 }) {
-  const [search, setSearch] = useState("");
-  const [showMenu, setShowMenu] = useState(false);
+  const [search, setSearch] =
+    useState("");
 
-  const [customNames, setCustomNames] =
-    useState({});
+  const [showMenu, setShowMenu] =
+    useState(false);
 
   const navigate = useNavigate();
-
-  // ---------------- CUSTOM NAME STORAGE KEY ----------------
-
-  const customNamesKey = currentUser?.id
-    ? `chatapp-custom-names-${currentUser.id}`
-    : null;
-
-  // ---------------- LOAD CUSTOM NAMES ----------------
-
-  useEffect(() => {
-    if (!customNamesKey) {
-      return;
-    }
-
-    try {
-      const savedNames =
-        localStorage.getItem(
-          customNamesKey
-        );
-
-      if (savedNames) {
-        const parsedNames =
-          JSON.parse(savedNames);
-
-        if (
-          parsedNames &&
-          typeof parsedNames === "object"
-        ) {
-          setCustomNames(
-            parsedNames
-          );
-        }
-      }
-    } catch (error) {
-      console.error(
-        "Failed to load custom names:",
-        error
-      );
-    }
-  }, [customNamesKey]);
-
-  // ---------------- SAVE CUSTOM NAME ----------------
-
-  const handleSaveCustomName = (
-    chatId,
-    customName
-  ) => {
-    setCustomNames((previousNames) => {
-      const updatedNames = {
-        ...previousNames,
-        [chatId]: customName,
-      };
-
-      if (customNamesKey) {
-        try {
-          localStorage.setItem(
-            customNamesKey,
-            JSON.stringify(
-              updatedNames
-            )
-          );
-        } catch (error) {
-          console.error(
-            "Failed to save custom name:",
-            error
-          );
-        }
-      }
-
-      return updatedNames;
-    });
-  };
-
-  // ---------------- SEARCH ----------------
 
   const filteredChats =
     chats.filter((chat) => {
       const originalName =
-        chat.name?.toLowerCase() || "";
+        chat.name?.toLowerCase() ||
+        "";
 
       const customName =
-        customNames[chat.id]
-          ?.toLowerCase() || "";
+        customNames[
+          chat.id
+        ]?.toLowerCase() || "";
 
       const searchText =
         search.toLowerCase();
@@ -121,8 +48,6 @@ function Sidebar({
       );
     });
 
-  // ---------------- UI ----------------
-
   return (
     <div className="flex h-full w-full min-w-0 flex-col border-r border-gray-200 bg-white">
 
@@ -133,7 +58,8 @@ function Sidebar({
         <div className="mb-4 flex items-center justify-between sm:mb-5">
 
           <h1 className="text-xl font-bold text-gray-900 sm:text-2xl">
-            Chat<span className="text-blue-600">
+            Chat
+            <span className="text-blue-600">
               App
             </span>
           </h1>
@@ -206,7 +132,6 @@ function Sidebar({
             )}
 
           </div>
-
         </div>
 
         {/* Current User */}
@@ -245,7 +170,9 @@ function Sidebar({
             placeholder="Search chats..."
             value={search}
             onChange={(e) =>
-              setSearch(e.target.value)
+              setSearch(
+                e.target.value
+              )
             }
             className="w-full rounded-xl border border-gray-200 bg-gray-100 py-2.5 pl-10 pr-4 text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-blue-500 focus:bg-white"
           />
@@ -258,15 +185,21 @@ function Sidebar({
 
       <ChatList
         chats={filteredChats}
-        selectedChat={selectedChat}
+        selectedChat={
+          selectedChat
+        }
         setSelectedChat={
           setSelectedChat
         }
-        customNames={customNames}
-        onSaveCustomName={
-          handleSaveCustomName
+        customNames={
+          customNames
         }
-        unreadCounts={unreadCounts}
+        onSaveCustomName={
+          onSaveCustomName
+        }
+        unreadCounts={
+          unreadCounts
+        }
       />
 
     </div>
